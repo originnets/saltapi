@@ -1,4 +1,4 @@
-package utils
+package main
 
 import (
 	"bytes"
@@ -9,20 +9,20 @@ import (
 	"net/http"
 )
 
-type Auth struct{
-	User string  `json:"username"`
-	Passwd string  `json:"password"`
-	Eauth string `json:"eauth"`
+type Auth struct {
+	User   string `json:"username"`
+	Passwd string `json:"password"`
+	Eauth  string `json:"eauth"`
 }
 
 type Cfg struct {
-	Base string	`json:"base"`
+	Base string `json:"base"`
 	Auth Auth
 }
 
 type Client struct {
 	token string
-	cfg Cfg
+	cfg   Cfg
 }
 
 // Minion
@@ -51,7 +51,7 @@ type Minion struct {
 
 // MinionsResponse
 type MinionsResponse struct {
-	  Minions []map[string]Minion `json:"return"`
+	Minions []map[string]Minion `json:"return"`
 }
 
 // JobsResponse
@@ -64,18 +64,17 @@ type JobResponse struct {
 	Job []Job `json:"info"`
 }
 
-
 // ExecutionResponse
 type ExecutionResponse struct {
 	Job []Job `json:"return"`
 }
 
 type Result struct {
-	PID     int    `json:"pid"`
-	Retcode int    `json:"retcode"`
-	Return	interface{} `json:"return"`
-	Stdout  string `json:"stdout"`
-	Stderr  string `json:"stderr"`
+	PID     int         `json:"pid"`
+	Retcode int         `json:"retcode"`
+	Return  interface{} `json:"return"`
+	Stdout  string      `json:"stdout"`
+	Stderr  string      `json:"stderr"`
 }
 
 // Job
@@ -86,8 +85,8 @@ type Job struct {
 	User       string            `json:"User"`
 	StartTime  string            `json:"StartTime"`
 	TargetType string            `json:"Target-Type"`
-	Arguments  []string            `json:"Arguments"`
-	Minions    []string            `json:"Minions"`
+	Arguments  []string          `json:"Arguments"`
+	Minions    []string          `json:"Minions"`
 	Result     map[string]Result `json:"Result"`
 }
 
@@ -110,24 +109,24 @@ func (j *Job) Successful() bool {
 }
 
 // Get Token
-func (salt *Client) Auth() (error) {
+func (salt *Client) Auth() error {
 	urls := salt.cfg.Base + "/login"
-	data := fmt.Sprintf(`{ "username":"%s", "password":"%s", "eauth": "%s" }`, salt.cfg.Auth.User, salt.cfg.Auth.Passwd,salt.cfg.Auth.Eauth)
+	data := fmt.Sprintf(`{ "username":"%s", "password":"%s", "eauth": "%s" }`, salt.cfg.Auth.User, salt.cfg.Auth.Passwd, salt.cfg.Auth.Eauth)
 	req, err := http.NewRequest("POST", urls, bytes.NewBuffer([]byte(data)))
 	if err != nil {
-		return  err
+		return err
 	}
 
 	req.Header.Set("X-Auth-Token", salt.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	r := &http.Client{}
-	resp,err := r.Do(req)
+	resp, err := r.Do(req)
 	if err != nil {
-		return  err
+		return err
 	}
-	if resp.StatusCode != 200{
-		return  errors.New("请求失败")
+	if resp.StatusCode != 200 {
+		return errors.New("请求失败")
 	}
 	if err != nil {
 		return err
@@ -150,7 +149,7 @@ func New(cfg *Cfg) (*Client, error) {
 func (salt *Client) Get(postfix string) (*http.Response, error) {
 	urls := salt.cfg.Base + postfix
 
-	req, err := http.NewRequest("GET",urls, nil)
+	req, err := http.NewRequest("GET", urls, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +158,7 @@ func (salt *Client) Get(postfix string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	r := &http.Client{}
-	resp,err := r.Do(req)
+	resp, err := r.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +166,7 @@ func (salt *Client) Get(postfix string) (*http.Response, error) {
 	if resp.StatusCode != 200 {
 		return nil, errors.New("请求失败")
 	}
-	return resp,nil
+	return resp, nil
 }
 
 // POST
@@ -182,14 +181,14 @@ func (salt *Client) Post(postfix string, data []byte) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	r := &http.Client{}
-	resp,err := r.Do(req)
+	resp, err := r.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != 202 {
 		return nil, errors.New("请求失败")
 	}
-	return resp,nil
+	return resp, nil
 }
 
 // Close
@@ -278,9 +277,9 @@ func (salt *Client) Execute(client, function, command, target, targetType string
 	er := ExecutionResponse{}
 	var req string
 	if function == "test.ping" {
-		req = fmt.Sprintf(`{"client":"%s", "fun": "%s", "tgt": "%s", "expr_form": "%s"}`, client,function, target, targetType)
-	}else {
-		req = fmt.Sprintf(`{"client":"%s", "fun": "%s", "arg": "%s", "tgt": "%s", "expr_form": "%s"}`, client,function, command, target, targetType)
+		req = fmt.Sprintf(`{"client":"%s", "fun": "%s", "tgt": "%s", "expr_form": "%s"}`, client, function, target, targetType)
+	} else {
+		req = fmt.Sprintf(`{"client":"%s", "fun": "%s", "arg": "%s", "tgt": "%s", "expr_form": "%s"}`, client, function, command, target, targetType)
 	}
 	resp, err := salt.Post("/minions", []byte(req))
 	if err != nil {
